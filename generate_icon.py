@@ -1,4 +1,4 @@
-"""
+﻿"""
 Generate task-slice app icon with ComfyUI Flux Schnell.
 - Output variants: task-slice/assets/icons/task-slice-v*.png
 - Final logo: app-logos/task-slice.png (600x600)
@@ -206,7 +206,7 @@ def main() -> None:
             raise RuntimeError(f"No image output for prompt {prompt['name']}")
 
     # Final selection: v2 (most symbol-like prompt)
-    selected = ASSET_DIR / "task-slice-v2.png"
+    selected = ASSET_DIR / "task-slice-v3.png"
     if not selected.exists():
         selected = generated_paths[0]
 
