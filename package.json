@@ -5,7 +5,9 @@
   "description": "한 줄 입력을 5단계 실행 플랜으로 분해하는 초경량 생산성 미니앱",
   "scripts": {
     "dev": "granite dev",
-    "build": "granite build"
+    "build": "granite build",
+    "capture:submission": "node scripts/capture-submission.js",
+    "qa:submission-images": "node scripts/qa-submission-images.js"
   },
   "dependencies": {
     "@apps-in-toss/web-framework": "1.5.2",
