@@ -9,7 +9,7 @@ const BASE_URL = process.env.CAPTURE_BASE_URL || 'http://127.0.0.1:3000';
 
 const APP_INFO = {
   name: 'task-slice',
-  displayName: '할 일 5단계 분해',
+  displayName: '한입업무',
   subtitle: '한 줄 입력으로 바로 실행 계획',
   color: '#3182F6',
   iconUrl: 'https://raw.githubusercontent.com/jino123413/app-logos/master/task-slice.png',
