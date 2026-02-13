@@ -156,6 +156,7 @@ const STORAGE_KEYS = {
   dailyRun: 'taskslice.dailyRun',
   streak: 'taskslice.streak',
   weeklySummary: 'taskslice.weeklySummary',
+  runHistory: 'taskslice.runHistory',
 } as const;
 
 const AD_GROUP_ID = 'ait-ad-test-interstitial-id';
@@ -252,6 +253,7 @@ const App: React.FC = () => {
   const [notice, setNotice] = useState('');
   const [reportOpen, setReportOpen] = useState(false);
   const [guideOpen, setGuideOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const {
     value: savedRun,
@@ -270,6 +272,12 @@ const App: React.FC = () => {
     save: saveWeeklyLogs,
     loading: weeklyLoading,
   } = useJsonStorage<CompletionLog[]>(STORAGE_KEYS.weeklySummary, []);
+
+  const {
+    value: runHistory,
+    save: saveRunHistory,
+    loading: historyLoading,
+  } = useJsonStorage<DailyRun[]>(STORAGE_KEYS.runHistory, []);
 
   const { loading: adLoading, showAd } = useInterstitialAd(AD_GROUP_ID);
 
@@ -365,7 +373,14 @@ const App: React.FC = () => {
     };
   }, [thisWeekLogs, weekDayEntries]);
 
-  const loading = runLoading || streakLoading || weeklyLoading;
+  const loading = runLoading || streakLoading || weeklyLoading || historyLoading;
+
+  const upsertRunHistory = async (run: DailyRun) => {
+    const nextHistory = [run, ...runHistory.filter((item) => item.date !== run.date)]
+      .sort((a, b) => (a.date < b.date ? 1 : -1))
+      .slice(0, 180);
+    await saveRunHistory(nextHistory);
+  };
 
   const handleCreatePlan = async () => {
     const singleSentence = sanitizeToSingleSentence(inputText);
@@ -387,6 +402,7 @@ const App: React.FC = () => {
     };
 
     await saveRun(nextRun);
+    await upsertRunHistory(nextRun);
     setInputText(singleSentence);
     setNotice('한 줄 업무를 5단계 실행 플랜으로 만들었어요.');
   };
@@ -442,6 +458,7 @@ const App: React.FC = () => {
     };
 
     await saveRun(nextRun);
+    await upsertRunHistory(nextRun);
 
     const nowDone = isAllDone(nextSteps);
     if (!wasDone && nowDone) {
@@ -476,10 +493,21 @@ const App: React.FC = () => {
     });
   };
 
+  const openHistory = () => {
+    showAd({
+      onDismiss: () => {
+        setHistoryOpen(true);
+      },
+    });
+  };
+
   const completionCount = currentRun?.steps.filter((step) => step.done).length ?? 0;
   const totalSteps = currentRun?.steps.length ?? 0;
   const completionRate = totalSteps === 0 ? 0 : Math.round((completionCount / totalSteps) * 100);
   const currentCategory = currentRun ? detectCategory(currentRun.input.text) : null;
+  const previousRuns = runHistory
+    .filter((run) => run.date !== todayKey)
+    .sort((a, b) => (a.date < b.date ? 1 : -1));
 
   return (
     <>
@@ -582,6 +610,20 @@ const App: React.FC = () => {
             <div className="mt-3 flex flex-col gap-3">
               <button
                 type="button"
+                onClick={openHistory}
+                disabled={loading}
+                className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700"
+              >
+                <span className="inline-flex items-center gap-2">
+                  이전 기록 보기
+                  <span className="ad-badge">AD</span>
+                </span>
+                <i className="ri-arrow-right-s-line text-base text-slate-400" />
+              </button>
+              <p className="text-xs text-slate-500">광고 시청 후 이전 날짜의 상세 기록을 열람할 수 있어요.</p>
+
+              <button
+                type="button"
                 onClick={openWeeklyReport}
                 disabled={loading}
                 className="flex items-center justify-between rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-semibold text-slate-700"
@@ -653,6 +695,54 @@ const App: React.FC = () => {
                     <p className="mt-1 text-xs text-slate-600">{item.examples.join('  ·  ')}</p>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        ) : null}
+
+        {historyOpen ? (
+          <div className="fixed inset-0 z-[60] flex items-end bg-black/40 p-0">
+            <div className="max-h-[86vh] w-full rounded-t-3xl bg-white p-5">
+              <div className="mb-3 flex items-center justify-between">
+                <h2 className="text-base font-bold">이전 기록</h2>
+                <button type="button" onClick={() => setHistoryOpen(false)} className="text-sm text-slate-500">
+                  닫기
+                </button>
+              </div>
+
+              <div className="flex max-h-[70vh] flex-col gap-2 overflow-y-auto pb-2">
+                {previousRuns.length === 0 ? (
+                  <p className="text-sm text-slate-500">이전 기록이 아직 없어요.</p>
+                ) : (
+                  previousRuns.map((run) => {
+                    const doneCount = run.steps.filter((step) => step.done).length;
+                    const totalCount = run.steps.length;
+                    const rate = totalCount === 0 ? 0 : Math.round((doneCount / totalCount) * 100);
+                    const category = detectCategory(run.input.text);
+
+                    return (
+                      <div key={run.date} className="rounded-xl border border-slate-200 p-3">
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs text-slate-500">{run.date}</p>
+                          <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-slate-600">
+                            {CATEGORY_LABELS[category]}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm font-semibold text-slate-800">{run.input.text}</p>
+                        <p className="mt-1 text-xs text-slate-600">
+                          {doneCount}/{totalCount} 단계 완료 ({rate}%)
+                        </p>
+                        <div className="mt-2 flex flex-col gap-1">
+                          {run.steps.map((step, index) => (
+                            <p key={step.id} className={`text-xs ${step.done ? 'text-emerald-700' : 'text-slate-600'}`}>
+                              {index + 1}. {step.title}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </div>
           </div>
