@@ -4,12 +4,12 @@ const path = require('path');
 const SUBMISSION_DIR = path.resolve(__dirname, '..', 'submission');
 
 const REQUIRED = [
-  { file: 'thumbnail-square-1000x1000.png', width: 1000, height: 1000, type: 'thumbnail' },
-  { file: 'thumbnail-landscape-1932x828.png', width: 1932, height: 828, type: 'thumbnail' },
-  { file: 'screenshot-vertical-01-636x1048.png', width: 636, height: 1048, type: 'screenshot-vertical' },
-  { file: 'screenshot-vertical-02-636x1048.png', width: 636, height: 1048, type: 'screenshot-vertical' },
-  { file: 'screenshot-vertical-03-636x1048.png', width: 636, height: 1048, type: 'screenshot-vertical' },
-  { file: 'screenshot-horizontal-01-1504x741.png', width: 1504, height: 741, type: 'screenshot-horizontal' },
+  { file: 'thumb-square.png', width: 1000, height: 1000, type: 'thumbnail' },
+  { file: 'thumb-landscape.png', width: 1932, height: 828, type: 'thumbnail' },
+  { file: 'screenshot-1.png', width: 636, height: 1048, type: 'screenshot-vertical' },
+  { file: 'screenshot-2.png', width: 636, height: 1048, type: 'screenshot-vertical' },
+  { file: 'screenshot-3.png', width: 636, height: 1048, type: 'screenshot-vertical' },
+  { file: 'screenshot-landscape.png', width: 1504, height: 741, type: 'screenshot-horizontal' },
 ];
 
 function readPngSize(filePath) {
@@ -53,8 +53,8 @@ function main() {
     }
   }
 
-  const vCount = REQUIRED.filter(item => item.type === 'screenshot-vertical').length;
-  const hCount = REQUIRED.filter(item => item.type === 'screenshot-horizontal').length;
+  const vCount = REQUIRED.filter((item) => item.type === 'screenshot-vertical').length;
+  const hCount = REQUIRED.filter((item) => item.type === 'screenshot-horizontal').length;
   if (vCount < 3 || hCount < 1) {
     console.error(`COUNT_FAIL vertical=${vCount} horizontal=${hCount}`);
     failed = true;
